@@ -26,8 +26,6 @@ public class ClientGUI extends JFrame implements ActionListener, Thread.Uncaught
 
     private final JList<String> listUsers = new JList<>();
 
-
-
     public static void main(String[] args) {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
@@ -37,6 +35,18 @@ public class ClientGUI extends JFrame implements ActionListener, Thread.Uncaught
         });
     }
 
+    private void sendMessage(){
+        chatArea.append(messageField.getText());
+        chatArea.append("\n");
+        messageField.setText("");
+    }
+
+    private void initListeners(){
+        cbAlwaysOnTop.addActionListener(this);
+        messageField.addActionListener(
+                (ActionEvent e) -> {sendMessage();}
+        );
+    }
 
     ClientGUI () {
         Thread.setDefaultUncaughtExceptionHandler(this);
@@ -70,7 +80,7 @@ public class ClientGUI extends JFrame implements ActionListener, Thread.Uncaught
         add(panelTop, BorderLayout.NORTH);
         add(panelBottom, BorderLayout.SOUTH);
 
-        cbAlwaysOnTop.addActionListener(this);
+        initListeners();
 
         setVisible(true);
     }
