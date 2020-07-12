@@ -4,6 +4,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
 
 public class ClientGUI extends JFrame implements ActionListener, Thread.UncaughtExceptionHandler {
 
@@ -26,7 +27,7 @@ public class ClientGUI extends JFrame implements ActionListener, Thread.Uncaught
 
     private final JList<String> listUsers = new JList<>();
 
-
+    private ChatFileSaver fileChat;
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(new Runnable() {
@@ -37,8 +38,28 @@ public class ClientGUI extends JFrame implements ActionListener, Thread.Uncaught
         });
     }
 
+    private void sendMessage(){
+        chatArea.append(messageField.getText());
+        chatArea.append("\n");
+
+        fileChat.appendFile(messageField.getText());
+
+        messageField.setText("");
+    }
+
+    private void initListeners(){
+        cbAlwaysOnTop.addActionListener(this);
+        messageField.addActionListener(
+                (ActionEvent e) -> sendMessage()
+        );
+        buttonSend.addActionListener(
+                (ActionEvent e) -> sendMessage()
+        );
+    }
 
     ClientGUI () {
+        fileChat = new ChatFileSaver("chat_file.txt");
+
         Thread.setDefaultUncaughtExceptionHandler(this);
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setTitle("Chat");
@@ -70,7 +91,7 @@ public class ClientGUI extends JFrame implements ActionListener, Thread.Uncaught
         add(panelTop, BorderLayout.NORTH);
         add(panelBottom, BorderLayout.SOUTH);
 
-        cbAlwaysOnTop.addActionListener(this);
+        initListeners();
 
         setVisible(true);
     }
