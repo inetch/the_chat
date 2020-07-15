@@ -1,4 +1,4 @@
-package ru.gb.chat;
+package ru.gb.core;
 
 import java.io.*;
 import java.nio.file.Files;

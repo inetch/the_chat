@@ -1,10 +1,11 @@
-package ru.gb.chat;
+package ru.gb.gui;
+
+import ru.gb.core.ChatFileSaver;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.WindowEvent;
 
 public class ClientGUI extends JFrame implements ActionListener, Thread.UncaughtExceptionHandler {
 

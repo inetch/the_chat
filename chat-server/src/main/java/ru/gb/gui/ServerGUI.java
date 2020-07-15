@@ -1,4 +1,6 @@
-package ru.gb.chat;
+package ru.gb.gui;
+
+import ru.gb.core.ChatServer;
 
 import javax.swing.*;
 import java.awt.*;
