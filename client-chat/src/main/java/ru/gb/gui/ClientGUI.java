@@ -1,19 +1,30 @@
 package ru.gb.gui;
 
+import ru.gb.chat.common.Message;
 import ru.gb.core.ChatFileSaver;
+import ru.gb.net.MessageSocketThread;
+import ru.gb.net.MessageSocketThreadListener;
+import ru.gb.chat.common.MessageLibrary;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
+import java.net.Socket;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 
-public class ClientGUI extends JFrame implements ActionListener, Thread.UncaughtExceptionHandler {
+public class ClientGUI extends JFrame implements ActionListener, Thread.UncaughtExceptionHandler, MessageSocketThreadListener {
 
     private static final int WIDTH = 400;
     private static final int HEIGHT = 300;
 
+    private final JPanel settingsPanel = new JPanel(new GridLayout(2, 3));
+    private final JPanel messagePanel = new JPanel(new BorderLayout());
+
     private final JTextArea chatArea = new JTextArea();
-    private final JPanel panelTop = new JPanel(new GridLayout(2, 3));
+
     private final JTextField ipAddressField = new JTextField("127.0.0.1");
     private final JTextField portField = new JTextField("8181");
     private final JCheckBox cbAlwaysOnTop = new JCheckBox("Always on top", true);
@@ -21,40 +32,64 @@ public class ClientGUI extends JFrame implements ActionListener, Thread.Uncaught
     private final JPasswordField passwordField = new JPasswordField("123");
     private final JButton buttonLogin = new JButton("Login");
 
-    private final JPanel panelBottom = new JPanel(new BorderLayout());
     private final JButton buttonDisconnect = new JButton("<html><b>Disconnect</b></html>");
     private final JTextField messageField = new JTextField();
     private final JButton buttonSend = new JButton("Send");
 
+    private String nickName;
+    private SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
+
     private final JList<String> listUsers = new JList<>();
+
+    private MessageSocketThread socketThread;
 
     private ChatFileSaver fileChat;
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                new ClientGUI();
-            }
-        });
+        SwingUtilities.invokeLater(() -> new ClientGUI());
     }
 
     private void sendMessage(){
-        chatArea.append(messageField.getText());
-        chatArea.append("\n");
-
-        fileChat.appendFile(messageField.getText());
-
+        socketThread.sendMessage(messageField.getText());
+        putMessageToTextArea(nickName, messageField.getText());
         messageField.setText("");
+        messageField.grabFocus();
+    }
+
+    private void putMessageToTextArea(String userName, String message){
+        String messageToChat = String.format("%s <%s>: %s%n", sdf.format(Calendar.getInstance().getTime()), userName, message);
+        chatArea.append(messageToChat);
+        fileChat.appendFile(messageField.getText());
     }
 
     private void initListeners(){
         cbAlwaysOnTop.addActionListener(this);
+
         messageField.addActionListener(
                 (ActionEvent e) -> sendMessage()
         );
+
         buttonSend.addActionListener(
                 (ActionEvent e) -> sendMessage()
+        );
+
+        buttonLogin.addActionListener(
+                (ActionEvent e) -> {
+                    Socket socket = null;
+                    try{
+                        socket = new Socket(ipAddressField.getText(), Integer.parseInt(portField.getText()));
+                        nickName = loginField.getText();
+                        socketThread = new MessageSocketThread(this, "Client " + nickName, socket);
+                        messagePanel.setVisible(true);
+                        settingsPanel.setVisible(false);
+                    } catch (IOException ioException){
+                        showError(ioException.getMessage());
+                    }
+                }
+        );
+
+        buttonDisconnect.addActionListener(
+                (ActionEvent e) -> socketThread.close()
         );
     }
 
@@ -77,26 +112,36 @@ public class ClientGUI extends JFrame implements ActionListener, Thread.Uncaught
         chatArea.setWrapStyleWord(true);
         chatArea.setEditable(false);
 
-        panelTop.add(ipAddressField);
-        panelTop.add(portField);
-        panelTop.add(cbAlwaysOnTop);
-        panelTop.add(loginField);
-        panelTop.add(passwordField);
-        panelTop.add(buttonLogin);
-        panelBottom.add(buttonDisconnect, BorderLayout.WEST);
-        panelBottom.add(messageField, BorderLayout.CENTER);
-        panelBottom.add(buttonSend, BorderLayout.EAST);
+        settingsPanel.add(ipAddressField);
+        settingsPanel.add(portField);
+        settingsPanel.add(cbAlwaysOnTop);
+        settingsPanel.add(loginField);
+        settingsPanel.add(passwordField);
+        settingsPanel.add(buttonLogin);
+        messagePanel.add(buttonDisconnect, BorderLayout.WEST);
+        messagePanel.add(messageField, BorderLayout.CENTER);
+        messagePanel.add(buttonSend, BorderLayout.EAST);
 
         add(scrollPaneChatArea, BorderLayout.CENTER);
         add(scrollPaneUsers, BorderLayout.EAST);
-        add(panelTop, BorderLayout.NORTH);
-        add(panelBottom, BorderLayout.SOUTH);
+        add(settingsPanel, BorderLayout.NORTH);
+        add(messagePanel, BorderLayout.SOUTH);
 
         initListeners();
+
+        switchGUI(false);
 
         setVisible(true);
     }
 
+    private void showError(String errorMsg) {
+        JOptionPane.showMessageDialog(this, errorMsg, "Exception!", JOptionPane.ERROR_MESSAGE);
+    }
+
+    private void switchGUI(boolean isConnected){
+        messagePanel.setVisible(isConnected);
+        settingsPanel.setVisible(!isConnected);
+    }
 
     @Override
     public void actionPerformed(ActionEvent e) {
@@ -116,4 +161,50 @@ public class ClientGUI extends JFrame implements ActionListener, Thread.Uncaught
                 t.getName(), e.getClass().getCanonicalName(), e.getMessage(), ste[0]);
         JOptionPane.showMessageDialog(this, msg, "Exception!", JOptionPane.ERROR_MESSAGE);
     }
+
+    @Override
+    public void onMessageReceived(String msg, MessageSocketThread thread) {
+        if(MessageLibrary.isFormattedMessage(msg)){
+            Message message = MessageLibrary.parseMessage(msg);
+            switch (message.msgType){
+                case AUTH:
+                    if(message.aType == MessageLibrary.authType.ACCEPT){
+                        putMessageToTextArea("System", "Welcome, " + nickName);
+                    } else if (message.aType == MessageLibrary.authType.DENIED){
+                        putMessageToTextArea("System", "Wrong credentials!");
+                    } else {
+                        putMessageToTextArea("System", "Incorrect auth message");
+                    }
+                    break;
+                case BROADCAST:
+                    putMessageToTextArea(message.nickname, "[BC] " + msg);
+                    break;
+                case ERROR:
+                default:
+                    putMessageToTextArea("System", "Incorrect message");
+            }
+        } else {
+            putMessageToTextArea("raw message", msg);
+        }
+
+
+    }
+
+    @Override
+    public void onSocketReady(MessageSocketThread thread){
+        switchGUI(true);
+        socketThread.sendMessage(MessageLibrary.getAuthRequestMessage(loginField.getText(), new String(passwordField.getPassword())));
+    }
+
+    @Override
+    public void onSocketClosed(MessageSocketThread thread){
+        switchGUI(false);
+    }
+
+    @Override
+    public void onException(Throwable throwable, MessageSocketThread thread) {
+        throwable.printStackTrace();
+        showError(throwable.getMessage());
+    }
+
 }
