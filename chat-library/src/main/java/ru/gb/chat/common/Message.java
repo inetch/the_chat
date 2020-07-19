@@ -74,9 +74,9 @@ public class Message {
                 case BROADCAST:
                     login = "";
                     password = "";
-                    nickname = "";
-                    message = "";
-                    millis = lines[0];
+                    nickname = lines[2];
+                    message = lines[3];
+                    millis = lines[1];
             }
         } catch (IndexOutOfBoundsException e) {
             msgType = MessageLibrary.messageType.ERROR;
