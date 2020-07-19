@@ -11,5 +11,11 @@
 
     <artifactId>network</artifactId>
 
-
+    <dependencies>
+        <dependency>
+            <groupId>chat</groupId>
+            <artifactId>network</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+    </dependencies>
 </project>
