@@ -10,7 +10,6 @@ import java.net.Socket;
 public class ClientSessionThread extends MessageSocketThread {
 
     private boolean isAuthorized = false;
-    private String nickname;
     private User user;
 
     public ClientSessionThread(MessageSocketThreadListener listener, String name, Socket socket) {
@@ -21,15 +20,11 @@ public class ClientSessionThread extends MessageSocketThread {
         return isAuthorized;
     }
 
-    public String getNickname() {
-        return nickname;
-    }
-
     public void authAccept(User user) {
         this.user = user;
-        this.nickname = user.getNickname();
         this.isAuthorized = true;
         sendMessage(MessageLibrary.getAuthAcceptMessage(user.getNickname()));
+        System.out.println(this.user);
     }
 
     public void authDeny() {

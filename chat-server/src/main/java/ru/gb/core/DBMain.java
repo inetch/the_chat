@@ -16,9 +16,11 @@ public class DBMain {
     private PreparedStatement updateLastAction;
     private PreparedStatement getNicknameByUserName;
     private PreparedStatement getUsers;
+    private PreparedStatement changeNickname;
 
     public static final int loginAction = 1;
     public static final int logoutAction = 0;
+    public static final int changeNickAction = 2;
 
     public enum actionResult{
         SUCCESS
@@ -36,6 +38,7 @@ public class DBMain {
         updateLastAction    = connection.prepareStatement("update usr_user set last_successful_action_id = ? where id = ?");
         getNicknameByUserName   = connection.prepareStatement("select u.nickname from usr_user u join usr_credential c on (c.id = u.id) where c.user_name = ?");
         getUsers            = connection.prepareStatement("select c.id, c.user_name, u.nickname, u.last_successful_action_id from usr_credential c join usr_user u on (u.id = c.id)");
+        changeNickname      = connection.prepareStatement("update usr_user set nickname = ? where id = ?");
     }
 
     public DBMain(String databaseFilename){
@@ -167,6 +170,24 @@ public class DBMain {
             logUserAction(userId, logoutAction, true);
         } catch (SQLException sqle){
             res = actionResult.SQL_EXCEPTION;
+        }
+        return res;
+    }
+
+    public actionResult changeNick(int userId, String newNickname){
+        actionResult res = actionResult.SUCCESS;
+        try{
+            changeNickname.setString(1, newNickname);
+            changeNickname.setInt(2, userId);
+            changeNickname.executeUpdate();
+            logUserAction(userId, changeNickAction, true);
+        } catch (SQLException sqle){
+            res = actionResult.SQL_EXCEPTION;
+            try{
+                logUserAction(userId, changeNickAction, false);
+            }catch (SQLException e){
+                e.printStackTrace();
+            }
         }
         return res;
     }

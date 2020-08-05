@@ -21,25 +21,33 @@ public class Message {
 
         try {
             switch (lines[0]) {
-                case "/auth":
+                case MessageLibrary.AUTH_METHOD:
                     msgType = MessageLibrary.messageType.AUTH;
                     switch (lines[1]) {
-                        case "request":
+                        case MessageLibrary.AUTH_REQUEST:
                             aType = MessageLibrary.authType.REQUEST;
                             break;
-                        case "accept":
+                        case MessageLibrary.AUTH_ACCEPT:
                             aType = MessageLibrary.authType.ACCEPT;
                             break;
-                        case "denied":
+                        case MessageLibrary.AUTH_DENIED:
                         default:
                             aType = MessageLibrary.authType.DENIED;
                     }
                     break;
-                case "/broadcast":
+                case MessageLibrary.TYPE_BROADCAST:
                     msgType = MessageLibrary.messageType.BROADCAST;
                     aType = null;
                     break;
-                case "/msg_format_error":
+                case MessageLibrary.TYPE_CHANGENICK:
+                    msgType = MessageLibrary.messageType.CHANGENICK;
+                    aType = null;
+                    break;
+                case MessageLibrary.TYPE_REGULAR:
+                    msgType = MessageLibrary.messageType.REGULAR;
+                    aType = null;
+                    break;
+                case MessageLibrary.MSG_FORMAT_ERROR:
                 default:
                     msgType = MessageLibrary.messageType.ERROR;
                     aType = null;
@@ -77,6 +85,18 @@ public class Message {
                     nickname = lines[2];
                     message = lines[3];
                     millis = lines[1];
+                case CHANGENICK:
+                    login = "";
+                    password = "";
+                    nickname = lines[1];
+                    message = "";
+                    millis = "";
+                case REGULAR:
+                    login = "";
+                    password = "";
+                    nickname = lines[1];
+                    message = lines[3];
+                    millis = lines[2];
             }
         } catch (IndexOutOfBoundsException e) {
             msgType = MessageLibrary.messageType.ERROR;
@@ -90,5 +110,16 @@ public class Message {
         this.nickname = nickname;
         this.message = message;
         this.millis = millis;
+    }
+
+    @Override
+    public String toString() {
+        return  this.msgType    + " " +
+                this.aType      + " " +
+                this.login      + " " +
+                this.password   + " " +
+                this.nickname   + " " +
+                this.message    + " " +
+                this.millis     ;
     }
 }

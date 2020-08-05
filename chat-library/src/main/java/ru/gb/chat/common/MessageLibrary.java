@@ -15,6 +15,8 @@ public class MessageLibrary {
         AUTH
       , BROADCAST
       , ERROR
+      , CHANGENICK
+      , REGULAR
     }
 
     public enum authType{
@@ -30,6 +32,8 @@ public class MessageLibrary {
     public static final String AUTH_DENIED = "denied";
     /* если мы вдруг не поняли, что за сообщение и не смогли разобрать */
     public static final String TYPE_BROADCAST = "/broadcast";
+    public static final String TYPE_CHANGENICK = "/changenick";
+    public static final String TYPE_REGULAR = "/regular";
 
     /* то есть сообщение, которое будет посылаться всем */
     public static final String MSG_FORMAT_ERROR = "/msg_format_error";
@@ -40,6 +44,10 @@ public class MessageLibrary {
 
     public static String getAuthAcceptMessage(String nickname) {
         return AUTH_METHOD + DELIMITER + AUTH_ACCEPT + DELIMITER + nickname;
+    }
+
+    public static String getChangenickMessage(String newNickname){
+        return TYPE_CHANGENICK + DELIMITER + newNickname;
     }
 
     public static String getAuthDeniedMessage() {
@@ -53,6 +61,16 @@ public class MessageLibrary {
     public static String getBroadcastMessage(String src, String message) {
         return TYPE_BROADCAST + DELIMITER + System.currentTimeMillis() +
                 DELIMITER + src + DELIMITER + message;
+    }
+
+    public static String getRegularMessage(String nickName, String message){
+        return TYPE_REGULAR + DELIMITER + System.currentTimeMillis() +
+                DELIMITER + nickName + DELIMITER + message;
+    }
+
+    public static String getRegularMessage(String nickName, String message, String millis){
+        return TYPE_REGULAR + DELIMITER + millis +
+                DELIMITER + nickName + DELIMITER + message;
     }
 
     public static boolean isFormattedMessage(String message){

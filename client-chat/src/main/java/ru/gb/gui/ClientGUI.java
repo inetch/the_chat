@@ -50,10 +50,16 @@ public class ClientGUI extends JFrame implements ActionListener, Thread.Uncaught
     }
 
     private void sendMessage(){
-        socketThread.sendMessage(messageField.getText());
-        putMessageToTextArea(nickName, messageField.getText());
-        messageField.setText("");
-        messageField.grabFocus();
+        String message;
+        if(messageField.getText().startsWith(MessageLibrary.TYPE_CHANGENICK + " ")){
+            message = MessageLibrary.getChangenickMessage(messageField.getText().substring(MessageLibrary.TYPE_CHANGENICK.length() + 1));
+        }else {
+            message = MessageLibrary.getRegularMessage(nickName, messageField.getText());
+            putMessageToTextArea(nickName, messageField.getText());
+            messageField.setText("");
+            messageField.grabFocus();
+        }
+        socketThread.sendMessage(message);
     }
 
     private void putMessageToTextArea(String userName, String message){
@@ -169,6 +175,7 @@ public class ClientGUI extends JFrame implements ActionListener, Thread.Uncaught
             switch (message.msgType){
                 case AUTH:
                     if(message.aType == MessageLibrary.authType.ACCEPT){
+                        nickName = message.nickname;
                         putMessageToTextArea("System", "Welcome, " + nickName);
                     } else if (message.aType == MessageLibrary.authType.DENIED){
                         putMessageToTextArea("System", "Wrong credentials!");
@@ -177,7 +184,10 @@ public class ClientGUI extends JFrame implements ActionListener, Thread.Uncaught
                     }
                     break;
                 case BROADCAST:
-                    putMessageToTextArea(message.nickname, "[BC] " + msg);
+                    putMessageToTextArea(message.nickname, "[BC] " + message.message);
+                    break;
+                case REGULAR:
+                    putMessageToTextArea(message.nickname, "[" + message.millis + "]" + message.message);
                     break;
                 case ERROR:
                 default:
@@ -186,7 +196,6 @@ public class ClientGUI extends JFrame implements ActionListener, Thread.Uncaught
         } else {
             putMessageToTextArea("raw message", msg);
         }
-
 
     }
 

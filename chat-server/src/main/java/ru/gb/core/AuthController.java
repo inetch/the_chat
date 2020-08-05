@@ -37,6 +37,20 @@ public class AuthController {
         return null;
     }
 
+    public DBMain.actionResult changeNickname(String login, String newNickname){
+        User user = users.get(login);
+        if(user == null) {
+            return DBMain.actionResult.INVALID_USER;
+        }
+
+        DBMain.actionResult res = db.changeNick(user.getId(), newNickname);
+        if(res == DBMain.actionResult.SUCCESS){
+            user.changeNick(newNickname);
+        }
+
+        return res;
+    }
+
     private ArrayList<User> receiveUsers() {
         ArrayList<User> usersArr = db.receiveUsers();
         return usersArr;

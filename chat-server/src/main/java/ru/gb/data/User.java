@@ -23,15 +23,24 @@ public class User {
         return nickname;
     }
 
-    public boolean isPasswordCorrect(String password) {
-        return this.password.equals(password);
-    }
-
     public void setLastActionId(int lastActionId){
         this.lastActionId = lastActionId;
     }
 
     public int getLastActionId(){
         return this.lastActionId;
+    }
+
+    public void changeNick(String newNick){
+        this.nickname = newNick;
+    }
+
+    public int getId(){
+        return this.id;
+    }
+
+    @Override
+    public String toString() {
+        return this.nickname + "[" + this.login + "]";
     }
 }

@@ -1,5 +1,6 @@
 package ru.gb.core;
 
+import ru.gb.chat.common.Message;
 import ru.gb.chat.common.MessageLibrary;
 import ru.gb.net.MessageSocketThread;
 import ru.gb.net.MessageSocketThreadListener;
@@ -78,11 +79,19 @@ public class ChatServer implements ServerSocketThreadListener, MessageSocketThre
 
     private void processAuthorizedUserMessage(String msg, ClientSessionThread thread) {
         logMessage(msg);
-        thread.sendMessage("echo: " + msg);
-        for(ClientSessionThread client: clients){
-            if(client.isAuthorized() && !client.equals(thread)) {
-                thread.sendMessage(MessageLibrary.getBroadcastMessage(client.getNickname(), msg));
-            }
+        Message message = new Message(msg.split(MessageLibrary.DELIMITER));
+        switch (message.msgType) {
+            case REGULAR:
+                for (ClientSessionThread client : clients) {
+                    if (client.isAuthorized() && !client.equals(thread)) {
+                        thread.sendMessage(MessageLibrary.getRegularMessage(thread.getUser().getNickname(), message.message, message.millis));
+                    }
+                }
+                break;
+            case CHANGENICK:
+                authController.changeNickname(thread.getUser().getLogin(), message.nickname);
+            default:
+                System.out.println("Unknown message: " + message);
         }
     }
 
@@ -102,7 +111,6 @@ public class ChatServer implements ServerSocketThreadListener, MessageSocketThre
             thread.authDeny();
             return;
         }
-        String nickname = authController.getNickname(login);
         thread.authAccept(authController.getUser(login));
     }
 
@@ -114,7 +122,6 @@ public class ChatServer implements ServerSocketThreadListener, MessageSocketThre
     @Override
     public void onSocketClosed(MessageSocketThread thread){
         logMessage("Socket closed");
-        //thread.
         clients.remove(thread);
     }
 
