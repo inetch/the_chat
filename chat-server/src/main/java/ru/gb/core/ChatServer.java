@@ -35,6 +35,7 @@ public class ChatServer implements ServerSocketThreadListener, MessageSocketThre
             return;
         }
         serverSocketThread.interrupt();
+        authController.closeDBConnection();
     }
 
     private void logMessage(String msg) {
@@ -95,12 +96,14 @@ public class ChatServer implements ServerSocketThreadListener, MessageSocketThre
         }
         String login = arr[2];
         String password = arr[3];
-        String nickname = authController.getNickname(login, password);
-        if (nickname == null) {
+        DBMain.actionResult res = authController.logIn(login, password);
+        if(res != DBMain.actionResult.SUCCESS){
+            System.out.println("user \"" + login + "\" failed to log in: " + res);
             thread.authDeny();
             return;
         }
-        thread.authAccept(nickname);
+        String nickname = authController.getNickname(login);
+        thread.authAccept(authController.getUser(login));
     }
 
     @Override
@@ -111,6 +114,7 @@ public class ChatServer implements ServerSocketThreadListener, MessageSocketThre
     @Override
     public void onSocketClosed(MessageSocketThread thread){
         logMessage("Socket closed");
+        //thread.
         clients.remove(thread);
     }
 
