@@ -1,0 +1,12 @@
+06.08.2020 00:20:18 <System>: Welcome, BoneCrusher
+фальшивая строка
+да чтож т акое то творится то
+06.08.2020 00:20:30 <BoneCrusher>: Попробуем так
+06.08.2020 00:20:36 <BoneCrusher>: неужто ужто?
+06.08.2020 00:50:53 0 <System>: Welcome, BoneCrusher
+06.08.2020 00:51:45 1 <System>: Welcome, BoneCrusher
+06.08.2020 00:51:56 2 <BoneCrusher>: sdsdf
+06.08.2020 00:51:59 3 <BoneCrusher>: sdfsdf
+06.08.2020 00:54:29 4 <System>: Welcome, BoneCrusher
+06.08.2020 00:55:33 5 <System>: Welcome, BoneCrusher
+06.08.2020 00:57:24 <System>: Welcome, Poopsik1998
