@@ -14,11 +14,14 @@ import java.io.IOException;
 import java.net.Socket;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.LinkedList;
 
 public class ClientGUI extends JFrame implements ActionListener, Thread.UncaughtExceptionHandler, MessageSocketThreadListener {
 
     private static final int WIDTH = 400;
     private static final int HEIGHT = 300;
+
+    private int preLoadedLines = 5;
 
     private final JPanel settingsPanel = new JPanel(new GridLayout(2, 3));
     private final JPanel messagePanel = new JPanel(new BorderLayout());
@@ -65,7 +68,15 @@ public class ClientGUI extends JFrame implements ActionListener, Thread.Uncaught
     private void putMessageToTextArea(String userName, String message){
         String messageToChat = String.format("%s <%s>: %s%n", sdf.format(Calendar.getInstance().getTime()), userName, message);
         chatArea.append(messageToChat);
-        fileChat.appendFile(messageField.getText());
+        fileChat.appendFile(messageToChat);
+    }
+
+    private void loadMessagesFromFile(){
+        LinkedList<String> lines = fileChat.loadLastLines(preLoadedLines);
+        for(String line : lines){
+            chatArea.append(line + "\n");
+        }
+        chatArea.append("==========================\n");
     }
 
     private void initListeners(){
@@ -176,6 +187,7 @@ public class ClientGUI extends JFrame implements ActionListener, Thread.Uncaught
                 case AUTH:
                     if(message.aType == MessageLibrary.authType.ACCEPT){
                         nickName = message.nickname;
+                        loadMessagesFromFile();
                         putMessageToTextArea("System", "Welcome, " + nickName);
                     } else if (message.aType == MessageLibrary.authType.DENIED){
                         putMessageToTextArea("System", "Wrong credentials!");
