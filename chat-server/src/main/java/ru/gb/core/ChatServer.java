@@ -9,6 +9,8 @@ import ru.gb.net.ServerSocketThreadListener;
 
 import java.net.Socket;
 import java.util.Vector;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ChatServer implements ServerSocketThreadListener, MessageSocketThreadListener, ChatServerListener {
 
@@ -17,8 +19,12 @@ public class ChatServer implements ServerSocketThreadListener, MessageSocketThre
     private AuthController authController;
     private Vector<ClientSessionThread> clients = new Vector<>();
 
+    private final int maximumAcceptedConnections = 100;
+    private ExecutorService clientES;
+
     public ChatServer(ChatServerListener listener) {
         this.listener = listener;
+        clientES = Executors.newFixedThreadPool(maximumAcceptedConnections);
     }
 
     public void start(int port) {
@@ -52,7 +58,7 @@ public class ChatServer implements ServerSocketThreadListener, MessageSocketThre
     public void onSocketAccepted(Socket socket) {
         ClientSessionThread session = new ClientSessionThread(this, "ClientSessionThread", socket);
         clients.add(session);
-        session.start();
+        clientES.execute(session);
     }
 
     @Override
