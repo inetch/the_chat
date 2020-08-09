@@ -97,6 +97,7 @@ public class ClientGUI extends JFrame implements ActionListener, Thread.Uncaught
                         socket = new Socket(ipAddressField.getText(), Integer.parseInt(portField.getText()));
                         nickName = loginField.getText();
                         socketThread = new MessageSocketThread(this, "Client " + nickName, socket);
+                        socketThread.start();
                         messagePanel.setVisible(true);
                         settingsPanel.setVisible(false);
                     } catch (IOException ioException){
