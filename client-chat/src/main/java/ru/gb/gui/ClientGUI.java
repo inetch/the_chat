@@ -5,6 +5,7 @@ import ru.gb.core.ChatFileSaver;
 import ru.gb.net.MessageSocketThread;
 import ru.gb.net.MessageSocketThreadListener;
 import ru.gb.chat.common.MessageLibrary;
+import ru.gb.gui.MessageSender;
 
 import javax.swing.*;
 import java.awt.*;
@@ -16,7 +17,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.LinkedList;
 
-public class ClientGUI extends JFrame implements ActionListener, Thread.UncaughtExceptionHandler, MessageSocketThreadListener {
+public class ClientGUI extends JFrame implements ActionListener, Thread.UncaughtExceptionHandler, MessageSocketThreadListener, MessageSender {
 
     private static final int WIDTH = 400;
     private static final int HEIGHT = 300;
@@ -31,13 +32,14 @@ public class ClientGUI extends JFrame implements ActionListener, Thread.Uncaught
     private final JTextField ipAddressField = new JTextField("127.0.0.1");
     private final JTextField portField = new JTextField("8181");
     private final JCheckBox cbAlwaysOnTop = new JCheckBox("Always on top", true);
-    private final JTextField loginField = new JTextField("login");
-    private final JPasswordField passwordField = new JPasswordField("123");
+    private final JTextField loginField = new JTextField("user1");
+    private final JPasswordField passwordField = new JPasswordField("user1");
     private final JButton buttonLogin = new JButton("Login");
 
     private final JButton buttonDisconnect = new JButton("<html><b>Disconnect</b></html>");
     private final JTextField messageField = new JTextField();
     private final JButton buttonSend = new JButton("Send");
+    private final JButton buttonTestThreads = new JButton("Test synch");
 
     private String nickName;
     private SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
@@ -48,21 +50,28 @@ public class ClientGUI extends JFrame implements ActionListener, Thread.Uncaught
 
     private ChatFileSaver fileChat;
 
+    private ThreadsTest threadsTest;
+
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new ClientGUI());
+    }
+
+    @Override
+    public void textMessageSend(String message){
+        putMessageToTextArea(nickName, message);
+        socketThread.sendMessage(MessageLibrary.getRegularMessage(nickName, message));
     }
 
     private void sendMessage(){
         String message;
         if(messageField.getText().startsWith(MessageLibrary.TYPE_CHANGENICK + " ")){
             message = MessageLibrary.getChangenickMessage(messageField.getText().substring(MessageLibrary.TYPE_CHANGENICK.length() + 1));
+            socketThread.sendMessage(message);
         }else {
-            message = MessageLibrary.getRegularMessage(nickName, messageField.getText());
-            putMessageToTextArea(nickName, messageField.getText());
-            messageField.setText("");
-            messageField.grabFocus();
+            textMessageSend(messageField.getText());
         }
-        socketThread.sendMessage(message);
+        messageField.setText("");
+        messageField.grabFocus();
     }
 
     private void putMessageToTextArea(String userName, String message){
@@ -90,6 +99,10 @@ public class ClientGUI extends JFrame implements ActionListener, Thread.Uncaught
                 (ActionEvent e) -> sendMessage()
         );
 
+        buttonTestThreads.addActionListener(
+                (ActionEvent e) -> threadsTest.start(5)
+        );
+
         buttonLogin.addActionListener(
                 (ActionEvent e) -> {
                     Socket socket = null;
@@ -97,6 +110,7 @@ public class ClientGUI extends JFrame implements ActionListener, Thread.Uncaught
                         socket = new Socket(ipAddressField.getText(), Integer.parseInt(portField.getText()));
                         nickName = loginField.getText();
                         socketThread = new MessageSocketThread(this, "Client " + nickName, socket);
+                        socketThread.start();
                         messagePanel.setVisible(true);
                         settingsPanel.setVisible(false);
                     } catch (IOException ioException){
@@ -137,7 +151,11 @@ public class ClientGUI extends JFrame implements ActionListener, Thread.Uncaught
         settingsPanel.add(buttonLogin);
         messagePanel.add(buttonDisconnect, BorderLayout.WEST);
         messagePanel.add(messageField, BorderLayout.CENTER);
-        messagePanel.add(buttonSend, BorderLayout.EAST);
+
+        JPanel messageButtonsPanel = new JPanel(new GridLayout(1, 2));
+        messageButtonsPanel.add(buttonSend);
+        messageButtonsPanel.add(buttonTestThreads);
+        messagePanel.add(messageButtonsPanel, BorderLayout.EAST);
 
         add(scrollPaneChatArea, BorderLayout.CENTER);
         add(scrollPaneUsers, BorderLayout.EAST);
@@ -147,6 +165,8 @@ public class ClientGUI extends JFrame implements ActionListener, Thread.Uncaught
         initListeners();
 
         switchGUI(false);
+
+        threadsTest = new ThreadsTest(this);
 
         setVisible(true);
     }

@@ -16,7 +16,6 @@ public class MessageSocketThread extends Thread {
         super(name);
         this.socket = socket;
         this.listener = listener;
-        start();
     }
 
     @Override
@@ -39,7 +38,7 @@ public class MessageSocketThread extends Thread {
     }
 
     public void sendMessage(String message) {
-        System.out.println("sendMessage: " + message);
+        //System.out.println("sendMessage: " + message);
         try {
             if (!socket.isConnected() || socket.isClosed()) {
                 listener.onException(new RuntimeException("Socked closed or not initialized"), this);
