@@ -20,11 +20,9 @@ public class ChatServer implements ServerSocketThreadListener, MessageSocketThre
     private Vector<ClientSessionThread> clients = new Vector<>();
 
     private final int maximumAcceptedConnections = 100;
-    private ExecutorService clientES;
 
     public ChatServer(ChatServerListener listener) {
         this.listener = listener;
-        clientES = Executors.newFixedThreadPool(maximumAcceptedConnections);
     }
 
     public void start(int port) {
@@ -58,7 +56,6 @@ public class ChatServer implements ServerSocketThreadListener, MessageSocketThre
     public void onSocketAccepted(Socket socket) {
         ClientSessionThread session = new ClientSessionThread(this, "ClientSessionThread", socket);
         clients.add(session);
-        clientES.execute(session);
     }
 
     @Override
