@@ -2,12 +2,17 @@ package ru.gb.core;
 
 import ru.gb.data.User;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.sql.*;
 import java.util.ArrayList;
 
 public class DBMain {
     private Connection connection;
     private final String databaseFilename;
+
+    private final Logger logger = LogManager.getLogger(DBMain.class);
 
     private PreparedStatement getUserPassword;
     private PreparedStatement checkUserAction;
@@ -57,7 +62,7 @@ public class DBMain {
             connection = DriverManager.getConnection("jdbc:sqlite:" + databaseFilename);
             prepareStatements();
         }catch (SQLException sqle){
-            sqle.printStackTrace();
+            logger.fatal(sqle);
         }
     }
 
@@ -91,6 +96,7 @@ public class DBMain {
             ResultSet rs = getUserPassword.executeQuery();
             if(!rs.next()){
                 rs.close();
+                logger.warn("login: invalid user {}", userName);
                 return actionResult.INVALID_USER;
             }
 
@@ -100,6 +106,7 @@ public class DBMain {
 
             if(!dbPass.equals(password)){
                 logUserAction(userId, loginAction, false);
+                logger.info("login: invalid password {}", userName);
                 return actionResult.INVALID_PASSWORD;
             }
 
@@ -111,8 +118,10 @@ public class DBMain {
             if(!rs.next()){
                 logUserAction(userId, loginAction, false);
                 rs.close();
+                logger.info("user {} is banned", userName);
                 return actionResult.INVALID_ACTION;
             }else{
+                logger.info("User {} successfully logged in", userName);
                 logUserAction(userId, loginAction, true);
             }
 
@@ -121,7 +130,7 @@ public class DBMain {
             }
 
         } catch (SQLException sqle){
-            sqle.printStackTrace();
+            logger.error(sqle);
             res = actionResult.SQL_EXCEPTION;
         }
 
@@ -130,11 +139,13 @@ public class DBMain {
 
     public actionResult userLogOut(String userName){
         actionResult res = actionResult.SUCCESS;
+        logger.debug("User [{}] log out procedure started", userName);
         try{
             getUserId.setString(1, userName);
             ResultSet rs = getUserId.executeQuery();
             if(!rs.first()){
                 res = actionResult.INVALID_USER;
+                logger.warn("Logout: invalid user {}", userName);
             }else{
                 res = userLogOut(rs.getInt(1));
             }
@@ -143,6 +154,7 @@ public class DBMain {
                 rs.close();
             }
         } catch (SQLException sqle){
+            logger.error(sqle);
             res = actionResult.SQL_EXCEPTION;
         }
 
@@ -159,7 +171,7 @@ public class DBMain {
             }
             rs.close();
         } catch (SQLException e){
-            e.printStackTrace();
+            logger.warn(e);
         }
         return nick;
     }
@@ -170,6 +182,7 @@ public class DBMain {
             logUserAction(userId, logoutAction, true);
         } catch (SQLException sqle){
             res = actionResult.SQL_EXCEPTION;
+            logger.warn(sqle);
         }
         return res;
     }
@@ -186,7 +199,7 @@ public class DBMain {
             try{
                 logUserAction(userId, changeNickAction, false);
             }catch (SQLException e){
-                e.printStackTrace();
+                logger.fatal(e);
             }
         }
         return res;
@@ -202,7 +215,7 @@ public class DBMain {
             }
             rs.close();
         }catch (SQLException e){
-            e.printStackTrace();
+            logger.fatal(e);
         }
 
         return usersArr;
