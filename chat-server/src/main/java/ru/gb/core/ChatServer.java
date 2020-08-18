@@ -1,5 +1,8 @@
 package ru.gb.core;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import ru.gb.chat.common.Message;
 import ru.gb.chat.common.MessageLibrary;
 import ru.gb.net.MessageSocketThread;
@@ -9,8 +12,6 @@ import ru.gb.net.ServerSocketThreadListener;
 
 import java.net.Socket;
 import java.util.Vector;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class ChatServer implements ServerSocketThreadListener, MessageSocketThreadListener, ChatServerListener {
 
@@ -19,7 +20,7 @@ public class ChatServer implements ServerSocketThreadListener, MessageSocketThre
     private AuthController authController;
     private Vector<ClientSessionThread> clients = new Vector<>();
 
-    private final int maximumAcceptedConnections = 100;
+    private final Logger logger = LogManager.getLogger(ChatServer.class);
 
     public ChatServer(ChatServerListener listener) {
         this.listener = listener;
@@ -49,7 +50,9 @@ public class ChatServer implements ServerSocketThreadListener, MessageSocketThre
 
     @Override
     public void onClientConnected() {
-        System.out.println("Client connected");
+        //System.out.println("Client connected");
+        //logMessage("Client connected");
+        logger.info("Client connected");
     }
 
     @Override
@@ -60,12 +63,12 @@ public class ChatServer implements ServerSocketThreadListener, MessageSocketThre
 
     @Override
     public void onException(Throwable throwable) {
-        throwable.printStackTrace();
+        logger.error(throwable);
     }
 
     @Override
     public void onException(Throwable throwable, MessageSocketThread thread) {
-        throwable.printStackTrace();
+        logger.error("Exception in thread {}", thread,  throwable);
     }
 
     @Override
@@ -83,7 +86,7 @@ public class ChatServer implements ServerSocketThreadListener, MessageSocketThre
     }
 
     private void processAuthorizedUserMessage(String msg, ClientSessionThread thread) {
-        logMessage(msg);
+        logger.trace(msg);
         Message message = new Message(msg.split(MessageLibrary.DELIMITER));
         switch (message.msgType) {
             case REGULAR:
@@ -96,7 +99,7 @@ public class ChatServer implements ServerSocketThreadListener, MessageSocketThre
             case CHANGENICK:
                 authController.changeNickname(thread.getUser().getLogin(), message.nickname);
             default:
-                System.out.println("Unknown message: " + message);
+                logger.error("Unknown message: {}", message);
         }
     }
 
@@ -121,18 +124,18 @@ public class ChatServer implements ServerSocketThreadListener, MessageSocketThre
 
     @Override
     public void onSocketReady(MessageSocketThread thread){
-        logMessage("Socket ready!");
+        logger.info("Socket ready!");
     }
 
     @Override
     public void onSocketClosed(MessageSocketThread thread){
-        logMessage("Socket closed");
+        logger.info("Socket closed");
         clients.remove(thread);
     }
 
     @Override
     public void onChatServerMessage(String message){
-        System.out.println(message);
+        logger.info(message);
     }
 
 }
